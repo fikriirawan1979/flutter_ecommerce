@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
+import '../core/theme/app_theme.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
 
 class MainLayout extends ConsumerWidget {
   final Widget child;
 
-  const MainLayout({super.key, required this.child});
+  const MainLayout({Key? key, required this.child}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+    final location = GoRouterState.of(context).matchedLocation;
+    
+    // Role-based menu items
+    final menuItems = _getMenuItemsForRole(user?.role ?? 'patient');
+    
     return Scaffold(
       body: Row(
         children: [
@@ -23,10 +25,14 @@ class MainLayout extends ConsumerWidget {
           Container(
             width: 260,
             decoration: BoxDecoration(
-              color: isDark ? AppColors.sidebarDark : AppColors.sidebarLight,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.sidebarDark
+                  : AppColors.sidebarLight,
               border: Border(
                 right: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.dividerDark
+                      : AppColors.dividerLight,
                 ),
               ),
             ),
@@ -46,19 +52,31 @@ class MainLayout extends ConsumerWidget {
                           ),
                           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                         ),
-                        child: const Icon(
-                          Icons.local_hospital,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: const Icon(Icons.local_hospital, color: Colors.white),
                       ),
                       const SizedBox(width: AppSpacing.md),
-                      Text(
-                        'DentalClinicOS',
-                        style: AppTypography.heading4.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'DentalClinicOS',
+                              style: AppTypography.heading4.copyWith(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (user?.clinicName != null)
+                              Text(
+                                user!.clinicName!,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondaryLight,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -70,85 +88,32 @@ class MainLayout extends ConsumerWidget {
                 // Navigation Items
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.md,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
                     children: [
-                      _buildSectionTitle('Main'),
+                      _buildSectionTitle('Menu'),
                       const SizedBox(height: AppSpacing.sm),
-                      _NavItem(
-                        icon: Icons.dashboard_outlined,
-                        label: 'Dashboard',
-                        route: '/',
-                        isActive: GoRouterState.of(context).matchedLocation == '/',
-                      ),
-                      _NavItem(
-                        icon: Icons.shopping_cart_outlined,
-                        label: 'Assessment Packages',
-                        route: '/catalog',
-                        isActive: GoRouterState.of(context).matchedLocation == '/catalog',
+                      
+                      ...menuItems.where((item) => item.category == 'main').map((item) => 
+                        _NavItem(
+                          icon: item.icon,
+                          label: item.label,
+                          route: item.route,
+                          isActive: location == item.route,
+                        )
                       ),
                       
-                      if (user?.isPatient ?? false) ...[
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildSectionTitle('Patient'),
-                        const SizedBox(height: AppSpacing.sm),
-                        _NavItem(
-                          icon: Icons.assignment_outlined,
-                          label: 'My Assessments',
-                          route: '/assessments',
-                          isActive: GoRouterState.of(context).matchedLocation == '/assessments',
-                        ),
-                        _NavItem(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'Orders',
-                          route: '/orders',
-                          isActive: GoRouterState.of(context).matchedLocation == '/orders',
-                        ),
-                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildSectionTitle('Settings'),
+                      const SizedBox(height: AppSpacing.sm),
                       
-                      if (user?.isDoctor ?? false) ...[
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildSectionTitle('Doctor'),
-                        const SizedBox(height: AppSpacing.sm),
+                      ...menuItems.where((item) => item.category == 'settings').map((item) => 
                         _NavItem(
-                          icon: Icons.people_outlined,
-                          label: 'Patients',
-                          route: '/patients',
-                          isActive: GoRouterState.of(context).matchedLocation == '/patients',
-                        ),
-                        _NavItem(
-                          icon: Icons.description_outlined,
-                          label: 'Reports',
-                          route: '/reports',
-                          isActive: GoRouterState.of(context).matchedLocation == '/reports',
-                        ),
-                      ],
-                      
-                      if (user?.isAdmin ?? false) ...[
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildSectionTitle('Admin'),
-                        const SizedBox(height: AppSpacing.sm),
-                        _NavItem(
-                          icon: Icons.manage_accounts_outlined,
-                          label: 'Users',
-                          route: '/admin/users',
-                          isActive: GoRouterState.of(context).matchedLocation == '/admin/users',
-                        ),
-                        _NavItem(
-                          icon: Icons.inventory_2_outlined,
-                          label: 'Products',
-                          route: '/admin/products',
-                          isActive: GoRouterState.of(context).matchedLocation == '/admin/products',
-                        ),
-                        _NavItem(
-                          icon: Icons.analytics_outlined,
-                          label: 'Analytics',
-                          route: '/admin/analytics',
-                          isActive: GoRouterState.of(context).matchedLocation == '/admin/analytics',
-                        ),
-                      ],
+                          icon: item.icon,
+                          label: item.label,
+                          route: item.route,
+                          isActive: location == item.route,
+                        )
+                      ),
                     ],
                   ),
                 ),
@@ -165,9 +130,7 @@ class MainLayout extends ConsumerWidget {
                         backgroundColor: AppColors.primary.withOpacity(0.2),
                         child: Text(
                           user?.initials ?? 'U',
-                          style: AppTypography.label.copyWith(
-                            color: AppColors.primary,
-                          ),
+                          style: AppTypography.label.copyWith(color: AppColors.primary),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -179,14 +142,11 @@ class MainLayout extends ConsumerWidget {
                               user?.fullName ?? 'User',
                               style: AppTypography.bodySmall.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimaryLight,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              user?.role.name.toUpperCase() ?? 'PATIENT',
+                              user?.role.toUpperCase() ?? 'USER',
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.textSecondaryLight,
                               ),
@@ -196,9 +156,7 @@ class MainLayout extends ConsumerWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.logout, size: 20),
-                        onPressed: () {
-                          ref.read(authProvider.notifier).logout();
-                        },
+                        onPressed: () => ref.read(authProvider.notifier).logout(),
                       ),
                     ],
                   ),
@@ -216,64 +174,31 @@ class MainLayout extends ConsumerWidget {
                   height: 60,
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.glassDark : AppColors.glassLight,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.glassDark
+                        : AppColors.glassLight,
                     border: Border(
                       bottom: BorderSide(
-                        color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight,
                       ),
                     ),
                   ),
                   child: Row(
                     children: [
-                      // Breadcrumbs would go here
-                      const Spacer(),
-                      // Search Bar
-                      Container(
-                        width: 300,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                          border: Border.all(
-                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: AppSpacing.md),
-                            Icon(
-                              Icons.search,
-                              size: 18,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search...',
-                                  hintStyle: AppTypography.bodySmall.copyWith(
-                                    color: isDark
-                                        ? AppColors.textSecondaryDark
-                                        : AppColors.textSecondaryLight,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        _getPageTitle(location),
+                        style: AppTypography.heading4,
                       ),
+                      const Spacer(),
+                      // Language Switcher
+                      _LanguageSwitcher(),
                       const SizedBox(width: AppSpacing.md),
-                      // Notifications
                       IconButton(
                         icon: const Icon(Icons.notifications_outlined),
                         onPressed: () {},
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      // Settings
                       IconButton(
                         icon: const Icon(Icons.settings_outlined),
                         onPressed: () {},
@@ -285,7 +210,9 @@ class MainLayout extends ConsumerWidget {
                 // Content Area
                 Expanded(
                   child: Container(
-                    color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.backgroundDark
+                        : AppColors.backgroundLight,
                     child: child,
                   ),
                 ),
@@ -295,6 +222,100 @@ class MainLayout extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  List<MenuItem> _getMenuItemsForRole(String role) {
+    final items = <MenuItem>[
+      MenuItem(
+        icon: Icons.dashboard_outlined,
+        label: 'Dashboard',
+        route: '/dashboard',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor', 'patient'],
+      ),
+      MenuItem(
+        icon: Icons.calendar_today_outlined,
+        label: 'Reservations',
+        route: '/reservation',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor', 'patient'],
+      ),
+      MenuItem(
+        icon: Icons.meeting_room_outlined,
+        label: 'Reception',
+        route: '/reception',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor'],
+      ),
+      MenuItem(
+        icon: Icons.medical_services_outlined,
+        label: 'Consultation',
+        route: '/consultation',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor'],
+      ),
+      MenuItem(
+        icon: Icons.account_balance_wallet_outlined,
+        label: 'Accounting',
+        route: '/accounting',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin'],
+      ),
+      MenuItem(
+        icon: Icons.people_outlined,
+        label: 'Patients',
+        route: '/patients',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor'],
+      ),
+      MenuItem(
+        icon: Icons.access_time_outlined,
+        label: 'Waiting Monitor',
+        route: '/waiting',
+        category: 'main',
+        roles: ['super_admin', 'clinic_admin', 'doctor', 'patient'],
+      ),
+      // Settings
+      MenuItem(
+        icon: Icons.business_outlined,
+        label: 'Clinic Settings',
+        route: '/settings/clinic',
+        category: 'settings',
+        roles: ['super_admin', 'clinic_admin'],
+      ),
+      MenuItem(
+        icon: Icons.star_outline,
+        label: 'Points Master',
+        route: '/settings/points',
+        category: 'settings',
+        roles: ['super_admin', 'clinic_admin'],
+      ),
+      MenuItem(
+        icon: Icons.question_answer_outlined,
+        label: 'Questionnaire',
+        route: '/settings/questionnaire',
+        category: 'settings',
+        roles: ['super_admin', 'clinic_admin'],
+      ),
+    ];
+    
+    return items.where((item) => item.roles.contains(role)).toList();
+  }
+
+  String _getPageTitle(String location) {
+    final titles = {
+      '/dashboard': 'Dashboard',
+      '/reservation': 'Reservations',
+      '/reception': 'Reception',
+      '/consultation': 'Consultation Room',
+      '/accounting': 'Accounting',
+      '/patients': 'Patient Management',
+      '/waiting': 'Waiting Monitor',
+      '/settings/clinic': 'Clinic Settings',
+      '/settings/points': 'Points Master',
+      '/settings/questionnaire': 'Questionnaire Settings',
+    };
+    return titles[location] ?? 'Page';
   }
 
   Widget _buildSectionTitle(String title) {
@@ -309,6 +330,22 @@ class MainLayout extends ConsumerWidget {
       ),
     );
   }
+}
+
+class MenuItem {
+  final IconData icon;
+  final String label;
+  final String route;
+  final String category;
+  final List<String> roles;
+
+  MenuItem({
+    required this.icon,
+    required this.label,
+    required this.route,
+    required this.category,
+    required this.roles,
+  });
 }
 
 class _NavItem extends StatelessWidget {
@@ -326,8 +363,6 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Material(
@@ -337,13 +372,12 @@ class _NavItem extends StatelessWidget {
           onTap: () => context.go(route),
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm + 4,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 4),
             decoration: BoxDecoration(
               color: isActive
-                  ? (isDark ? AppColors.sidebarSelectedDark : AppColors.sidebarSelectedLight)
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.sidebarSelectedDark
+                      : AppColors.sidebarSelectedLight)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(AppBorderRadius.medium),
             ),
@@ -352,17 +386,17 @@ class _NavItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 22,
-                  color: isActive
-                      ? AppColors.primary
-                      : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  color: isActive ? AppColors.primary : AppColors.textSecondaryLight,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Text(
                   label,
                   style: AppTypography.bodyMedium.copyWith(
                     color: isActive
-                        ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)
-                        : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight)
+                        : AppColors.textSecondaryLight,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -371,6 +405,23 @@ class _NavItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LanguageSwitcher extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.language),
+      tooltip: 'Change Language',
+      onSelected: (lang) {
+        // Implement language change
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'en', child: Text('English')),
+        const PopupMenuItem(value: 'id', child: Text('Bahasa Indonesia')),
+      ],
     );
   }
 }
