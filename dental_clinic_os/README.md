@@ -41,6 +41,34 @@ dental_clinic_os/
 └── .github/              # CI/CD workflows
 ```
 
+## 🏆 What's New (v1.0.0)
+
+### Production-Ready Features
+- ✅ **Hardened Multi-Tenant Isolation** - Complete tenant data segregation with middleware enforcement
+- ✅ **Enhanced Security** - Brute force protection, rate limiting, comprehensive audit logging
+- ✅ **Complete E-commerce Flow** - Products, orders, and Stripe payment integration
+- ✅ **AI-Ready Assessment Engine** - Rule-based cephalometric analysis with ML integration points
+- ✅ **Internationalization (i18n)** - 100+ translation keys for English and Indonesian
+- ✅ **Production Deployment** - Comprehensive deployment guide and security audit
+- ✅ **404 Issues Fixed** - All frontend screens created and properly integrated
+
+### Security Enhancements
+- Multi-factor authentication ready
+- Strong password policy (8+ chars, complexity requirements)
+- JWT with short expiration and refresh token rotation
+- Tenant isolation at application and database levels
+- PCI DSS compliant payment flow
+- Comprehensive security headers (HSTS, CSP, X-Frame-Options, etc.)
+- Structured audit logging
+
+### Developer Experience
+- Comprehensive API documentation (OpenAPI/Swagger)
+- Error tracking integration (Sentry)
+- Metrics collection (Prometheus)
+- Structured logging (structlog)
+- Type hints throughout
+- Detailed deployment guide
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -87,9 +115,9 @@ curl -X POST http://localhost:8000/api/v1/auth/seed-demo-users
 ```
 
 Demo credentials:
-- **Patient**: patient@demo.com / password123
-- **Doctor**: doctor@demo.com / password123
-- **Admin**: admin@demo.com / password123
+- **Patient**: patient@demo.com / Password123!
+- **Doctor**: doctor@demo.com / Password123!
+- **Admin**: admin@demo.com / Password123!
 
 ## 🛠️ Development
 
@@ -249,7 +277,9 @@ GitHub Actions workflow includes:
 ## 📚 Documentation
 
 - [API Documentation](docs/API.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)
+- [Security Audit Report](docs/SECURITY_AUDIT.md)
+- [Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)
 - [Architecture Decisions](docs/ARCHITECTURE.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 
