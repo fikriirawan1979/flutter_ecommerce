@@ -1,5 +1,4 @@
-import 'package:intl/intl.dart';
-import 'app_localizations.dart';
+part of 'app_localizations.dart';
 
 class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);

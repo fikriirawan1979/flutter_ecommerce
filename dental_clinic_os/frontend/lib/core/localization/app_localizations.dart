@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 abstract class AppLocalizations {
   AppLocalizations(String locale) : localeName = Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
+  static AppLocalizations? _current;
+
+  static AppLocalizations get current => _current!;
+
   static AppLocalizations of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static Future<AppLocalizations> load(Locale locale) async {
+    final name = locale.countryCode?.isEmpty == false
+        ? '${locale.languageCode}_${locale.countryCode}'
+        : locale.languageCode;
+    _current = _lookupAppLocalizations(locale);
+    return _current!;
+  }
+
+  static AppLocalizations _lookupAppLocalizations(Locale locale) {
+    switch (locale.languageCode) {
+      case 'id':
+        return AppLocalizationsId();
+      case 'en':
+      default:
+        return AppLocalizationsEn();
+    }
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
@@ -79,3 +102,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
+
+// Import implementations
+part 'app_localizations_en.dart';
+part 'app_localizations_id.dart';
