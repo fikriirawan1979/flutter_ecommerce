@@ -7,8 +7,10 @@ import logging
 import time
 
 from app.core.config import settings
+from app.core.security import rate_limiter, brute_force_protector
 from app.db.session import init_db
-from app.api.v1.endpoints import auth, assessments
+from app.api.v1.endpoints import auth, assessments, products, payments
+from app.middleware.tenant_middleware import TenantMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -69,6 +71,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Tenant isolation middleware
+app.add_middleware(TenantMiddleware)
+
+# Security middleware: Rate limiting
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Apply rate limiting to all requests"""
+    # Skip rate limiting for health checks and docs
+    skip_paths = ["/api/health", "/api/docs", "/api/redoc", "/api/openapi.json", "/"]
+    if any(request.url.path.startswith(path) for path in skip_paths):
+        return await call_next(request)
+    
+    # Use IP address as rate limit key
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"rate_limit:{client_ip}:{request.url.path}"
+    
+    if not rate_limiter.is_allowed(
+        key,
+        max_requests=settings.RATE_LIMIT_REQUESTS,
+        window_seconds=settings.RATE_LIMIT_WINDOW
+    ):
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "detail": "Rate limit exceeded",
+                "message": f"Too many requests. Please try again later."
+            }
+        )
+    
+    return await call_next(request)
+
 # Request timing middleware
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -107,6 +140,18 @@ app.include_router(
 )
 app.include_router(
     assessments.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    products.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    products.orders_router,
+    prefix="/api/v1"
+)
+app.include_router(
+    payments.router,
     prefix="/api/v1"
 )
 

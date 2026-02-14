@@ -1,0 +1,118 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# Flask / FastAPI
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment Variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Logs
+*.log
+logs/
+
+# Frontend / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+.metadata
+android/
+ios/
+web/
+
+# Docker
+.docker/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
+*.sql.gz
+*.sql
+
+# Uploads
+uploads/
+storage/
+
+# Certificates
+*.pem
+*.key
+*.crt
+*.p12
+
+# ML Models
+models/
+*.pkl
+*.h5
+*.pb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Security (should never be committed)
+secrets.yml
+secrets.json
+credentials.json
+service-account.json
+
+# Analytics and Monitoring
+*.trace
