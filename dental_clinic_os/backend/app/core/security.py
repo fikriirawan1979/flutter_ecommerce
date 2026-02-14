@@ -18,8 +18,20 @@ pwd_context = CryptContext(
     bcrypt__rounds=12  # Increased from default 10
 )
 
-# Encryption for sensitive data
-fernet = Fernet(settings.ENCRYPTION_KEY.encode() if hasattr(settings, 'ENCRYPTION_KEY') else Fernet.generate_key())
+# Encryption for sensitive data - generate valid key if not provided
+def _get_fernet_key():
+    """Get or generate valid Fernet key"""
+    key = getattr(settings, 'ENCRYPTION_KEY', None)
+    if key:
+        try:
+            # Validate the key
+            return Fernet(key.encode())
+        except Exception:
+            pass
+    # Generate a valid key
+    return Fernet(Fernet.generate_key())
+
+fernet = _get_fernet_key()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify password with constant-time comparison"""
@@ -44,7 +56,7 @@ def get_password_hash(password: str) -> str:
     
     return pwd_context.hash(password)
 
-def create_access_token(data: Dict[str, Any], tenant_id: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: Dict[str, Any], tenant_id: Optional[str] = None, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token with tenant context"""
     to_encode = data.copy()
     
@@ -57,15 +69,18 @@ def create_access_token(data: Dict[str, Any], tenant_id: str, expires_delta: Opt
     to_encode.update({
         "exp": expire,
         "type": "access",
-        "tenant_id": tenant_id,
         "iat": datetime.utcnow(),
         "jti": secrets.token_urlsafe(16)  # Unique token ID for revocation
     })
     
+    # Add tenant_id if provided
+    if tenant_id:
+        to_encode["tenant_id"] = tenant_id
+    
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token(data: Dict[str, Any], tenant_id: str) -> str:
+def create_refresh_token(data: Dict[str, Any], tenant_id: Optional[str] = None) -> str:
     """Create JWT refresh token"""
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
@@ -73,10 +88,13 @@ def create_refresh_token(data: Dict[str, Any], tenant_id: str) -> str:
     to_encode.update({
         "exp": expire,
         "type": "refresh",
-        "tenant_id": tenant_id,
         "iat": datetime.utcnow(),
         "jti": secrets.token_urlsafe(16)
     })
+    
+    # Add tenant_id if provided
+    if tenant_id:
+        to_encode["tenant_id"] = tenant_id
     
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -107,10 +125,14 @@ def verify_refresh_token_rotation(old_token: str, new_token: str) -> bool:
     if not old_payload or not new_payload:
         return False
     
-    # Verify same user and tenant
+    # Verify same user
     if old_payload.get("sub") != new_payload.get("sub"):
         return False
-    if old_payload.get("tenant_id") != new_payload.get("tenant_id"):
+    
+    # Verify same tenant if present in both tokens
+    old_tenant = old_payload.get("tenant_id")
+    new_tenant = new_payload.get("tenant_id")
+    if old_tenant and new_tenant and old_tenant != new_tenant:
         return False
     
     return True

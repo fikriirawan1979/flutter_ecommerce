@@ -1,5 +1,4 @@
-import 'package:intl/intl.dart';
-import 'app_localizations.dart';
+part of 'app_localizations.dart';
 
 class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);

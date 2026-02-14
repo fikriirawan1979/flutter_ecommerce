@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:intl/intl.dart';
-import 'l10n/app_localizations.dart';
-import 'l10n/app_localizations_en.dart';
-import 'l10n/app_localizations_id.dart';
+import 'app_localizations.dart';
 
 class L10n {
   static final all = [

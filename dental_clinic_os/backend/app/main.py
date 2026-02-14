@@ -8,7 +8,7 @@ import time
 
 from app.core.config import settings
 from app.db.session import init_db
-from app.api.v1.endpoints import auth, assessments
+from app.api.v1.endpoints import auth, assessments, orders, webhooks, admin
 
 # Configure logging
 logging.basicConfig(
@@ -107,6 +107,18 @@ app.include_router(
 )
 app.include_router(
     assessments.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    orders.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    webhooks.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    admin.router,
     prefix="/api/v1"
 )
 
