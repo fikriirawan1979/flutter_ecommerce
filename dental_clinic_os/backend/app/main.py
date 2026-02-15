@@ -8,7 +8,9 @@ import time
 
 from app.core.config import settings
 from app.db.session import init_db
-from app.api.v1.endpoints import auth, assessments
+from app.api.v1.endpoints import auth, assessments, products, orders, users, stripe_webhooks, tenants, ai_analysis
+from app.middleware.tenant_middleware import TenantMiddleware, AuditMiddleware, RateLimitMiddleware
+from app.core.i18n import LocaleMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -69,6 +71,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Security and audit middleware
+app.add_middleware(AuditMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(TenantMiddleware)
+app.add_middleware(LocaleMiddleware)
+
 # Request timing middleware
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -107,6 +115,30 @@ app.include_router(
 )
 app.include_router(
     assessments.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    products.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    orders.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    users.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    stripe_webhooks.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    tenants.router,
+    prefix="/api/v1"
+)
+app.include_router(
+    ai_analysis.router,
     prefix="/api/v1"
 )
 

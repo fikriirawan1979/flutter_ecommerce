@@ -1,16 +1,34 @@
 # DentalClinicOS
 
-A comprehensive macOS-style Dental Assessment Clinic Application built with Flutter and FastAPI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
+
+A comprehensive, production-ready macOS-style Dental Assessment Clinic Management System built with Flutter and FastAPI.
 
 ## 🎯 Project Overview
 
-DentalClinicOS is an end-to-end clinic management system featuring:
-- **Multi-role Authentication** (Patient/Doctor/Admin)
-- **E-commerce Module** for assessment packages
-- **File Upload System** for dental images (X-ray, intraoral)
+DentalClinicOS is an enterprise-grade end-to-end dental clinic management system featuring:
+
+### ✨ Core Features
+- **Multi-role Authentication** (Patient/Doctor/Admin/Super Admin) with JWT
+- **Multi-Tenancy** with complete data and storage isolation
+- **E-commerce Module** with Stripe payment integration
+- **AI-Powered X-Ray Analysis** with automatic landmark detection
 - **Rule-based Assessment Engine** for cephalometric analysis
-- **PDF Report Generation**
-- **Real-time Dashboards** with analytics
+- **File Upload System** with MinIO/S3 integration
+- **Internationalization** support for 7 languages
+- **PDF Report Generation** with WeasyPrint
+- **Real-time Dashboards** with comprehensive analytics
+- **Audit Logging** for compliance and security
+
+### 🔒 Security & Compliance
+- **Enterprise Security**: TLS/SSL, encryption at rest, rate limiting
+- **HIPAA-Ready**: Comprehensive audit logging, access controls
+- **GDPR-Compliant**: Data privacy controls, right to erasure
+- **Multi-factor Authentication** (MFA) ready
+- **Webhook Signature Verification** for payments
 
 ## 🏗️ Architecture
 
@@ -45,51 +63,44 @@ dental_clinic_os/
 
 ### Prerequisites
 - Docker & Docker Compose
-- Flutter SDK 3.0+
-- Python 3.11+
+- Flutter SDK 3.0+ (for local frontend development)
+- Python 3.11+ (for local backend development)
 
-### 1. Clone Repository
+### Docker Deployment (Recommended)
+
 ```bash
+# Clone repository
 git clone https://github.com/your-org/dental-clinic-os.git
 cd dental_clinic_os
-```
 
-### 2. Environment Setup
-```bash
 # Copy environment template
 cp .env.example .env
+nano .env  # Edit with your settings
 
-# Edit .env with your settings
-nano .env
-```
-
-### 3. Run with Docker
-```bash
 # Start all services
 docker-compose up -d
 
 # Check status
 docker-compose ps
 
-# View logs
-docker-compose logs -f
-```
-
-### 4. Access Application
-- **Web App**: http://localhost:3000
-- **API Documentation**: http://localhost:8000/api/docs
-- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
-
-### 5. Seed Demo Data
-```bash
-# Create demo users
+# Seed demo data
 curl -X POST http://localhost:8000/api/v1/auth/seed-demo-users
 ```
 
-Demo credentials:
+**Access Points:**
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/api/docs (Swagger UI)
+- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+- **Frontend**: http://localhost:3000
+
+**Demo Credentials:**
 - **Patient**: patient@demo.com / password123
 - **Doctor**: doctor@demo.com / password123
 - **Admin**: admin@demo.com / password123
+
+### Local Development
+
+See [QUICK_START.md](docs/QUICK_START.md) for detailed development setup.
 
 ## 🛠️ Development
 
@@ -120,51 +131,81 @@ docker-compose exec backend alembic upgrade head
 
 ## 📊 Features
 
-### Authentication System
-- JWT-based authentication
-- Role-based access control
-- Secure password hashing (bcrypt)
-- Token refresh mechanism
+### Authentication & Authorization
+- **JWT Authentication**: Access and refresh tokens with automatic rotation
+- **Role-Based Access Control**: Patient, Doctor, Admin, Super Admin roles
+- **Multi-Factor Authentication**: Ready for TOTP implementation
+- **Password Security**: Bcrypt hashing (12 rounds), strength validation, expiration tracking
+- **Account Security**: Lockout after 5 failed attempts, brute force protection
 
-### E-commerce Module
-- Product catalog with categories
-- Shopping cart functionality
-- Order management
-- Payment status simulation
-- Invoice generation
+### Multi-Tenancy
+- **Tenant Isolation**: Complete data separation at database and storage levels
+- **Tenant Identification**: Subdomain, header, or JWT-based
+- **Tenant Management**: Create, update, suspend, activate tenants
+- **Storage Isolation**: Separate MinIO buckets per tenant
+- **Status Management**: Active, Suspended, Trial, Cancelled statuses
 
-### Assessment Engine
-- Cephalometric measurement input
-- Rule-based diagnostic classification
-- AI-ready architecture for future ML integration
-- Confidence scoring
-- Structured JSON output
+### AI-Powered X-Ray Analysis
+- **Automatic Landmark Detection**: 15+ cephalometric points detected by AI
+- **Measurement Extraction**: Automatic calculation of all key measurements
+- **Skeletal Classification**: Class I/II/III with severity assessment
+- **Treatment Recommendations**: AI-generated treatment suggestions
+- **Confidence Scoring**: Model confidence metrics
+- **Manual Analysis**: Option for doctor to manually enter measurements
 
-Example assessment input:
+Example AI analysis output:
 ```json
 {
-  "SNA": 82,
-  "SNB": 78,
-  "ANB": 4,
-  "Overjet": 6,
-  "Overbite": 4
-}
-```
-
-Example output:
-```json
-{
+  "success": true,
+  "measurements": {
+    "SNA": 82.5,
+    "SNB": 78.3,
+    "ANB": 4.2,
+    "Overjet": 5.8,
+    "Overbite": 3.9
+  },
   "skeletal_class": "Class II",
   "severity": "Moderate",
-  "treatment_suggestion": "Non-extraction with growth modification",
-  "confidence_score": 0.85
+  "confidence": 0.87,
+  "findings": [
+    "Skeletal pattern identified as Class II",
+    "Sella-Nasion-A point angle within normal range"
+  ],
+  "recommendations": [
+    "Functional appliance therapy recommended if growing",
+    "Distalization or extraction options available"
+  ]
 }
 ```
 
+### E-commerce Module
+- **Product Catalog**: Manage assessment packages and services
+- **Shopping Cart**: Add items to cart, calculate totals
+- **Stripe Integration**: Secure payment processing with Payment Intents
+- **Order Management**: Track orders through payment to completion
+- **Refund Processing**: Handle refunds with Stripe integration
+- **Invoice Generation**: Automatic invoice creation and PDF generation
+- **Dashboard Statistics**: Revenue, orders, assessments metrics
+
+### File Upload & Storage
+- **MinIO Integration**: Secure object storage with S3-compatible API
+- **File Validation**: Size, type, and MIME type validation
+- **Checksum Verification**: SHA-256 checksums for integrity
+- **Tenant Isolation**: Separate storage paths per tenant
+- **Multiple Image Types**: X-ray, intraoral, cephalometric, panoramic
+- **Presigned URLs**: Secure temporary access URLs
+
+### Internationalization
+- **7 Languages**: English, Spanish, French, German, Chinese, Arabic, Portuguese
+- **Automatic Detection**: Locale detection from Accept-Language header
+- **Comprehensive Translations**: All user-facing messages translated
+- **RTL Support**: Right-to-left layout for Arabic
+- **Fallback**: Automatic fallback to English for unsupported languages
+
 ### Dashboard Features
-- **Patient Dashboard**: Active orders, upload images, track status
-- **Doctor Dashboard**: Pending reviews, annotation tools, report generation
-- **Admin Dashboard**: User management, analytics, revenue tracking
+- **Patient Dashboard**: Active orders, upload images, track status, view reports
+- **Doctor Dashboard**: Pending reviews, AI analysis tools, annotation, report generation
+- **Admin Dashboard**: User management, analytics, revenue tracking, tenant management
 
 ## 🎨 UI/UX Design
 
@@ -248,10 +289,27 @@ GitHub Actions workflow includes:
 
 ## 📚 Documentation
 
-- [API Documentation](docs/API.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [Architecture Decisions](docs/ARCHITECTURE.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete API reference with examples
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get started in 5 minutes
+- **[Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)** - Production deployment guide
+- **[Security Audit](docs/SECURITY_AUDIT.md)** - Security review and recommendations
+- **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)** - Feature implementation details
+- **[Changelog](CHANGELOG.md)** - Version history and changes
+
+## 🔒 Security
+
+DentalClinicOS follows security best practices:
+
+- **Authentication**: JWT with refresh tokens, role-based access control
+- **Encryption**: TLS/SSL for transit, Fernet for data at rest
+- **Isolation**: Multi-tenant data and storage isolation
+- **Rate Limiting**: Per-tenant/IP rate limiting
+- **Audit Logging**: Comprehensive logging of all actions
+- **Input Validation**: Pydantic validation on all inputs
+- **SQL Injection**: Protected by SQLAlchemy ORM
+- **XSS Protection**: Content security headers and sanitization
+
+See [SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) for complete security details.
 
 ## 🤝 Contributing
 

@@ -49,8 +49,8 @@ async def register(
     
     # Generate tokens
     token_data = {"sub": str(user.id), "role": user.role.value}
-    access_token = create_access_token(token_data)
-    refresh_token = create_refresh_token(token_data)
+    access_token = create_access_token(token_data, str(user.tenant_id))
+    refresh_token = create_refresh_token(token_data, str(user.tenant_id))
     
     from datetime import datetime
     expires_at = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -92,8 +92,8 @@ async def login(
     
     # Generate tokens
     token_data = {"sub": str(user.id), "role": user.role.value}
-    access_token = create_access_token(token_data)
-    refresh_token = create_refresh_token(token_data)
+    access_token = create_access_token(token_data, str(user.tenant_id))
+    refresh_token = create_refresh_token(token_data, str(user.tenant_id))
     
     expires_at = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
@@ -120,8 +120,9 @@ async def refresh_token(
     role = payload.get("role")
     
     token_data = {"sub": user_id, "role": role}
-    access_token = create_access_token(token_data)
-    new_refresh_token = create_refresh_token(token_data)
+    tenant_id = payload.get("tenant_id", "")
+    access_token = create_access_token(token_data, tenant_id)
+    new_refresh_token = create_refresh_token(token_data, tenant_id)
     
     from datetime import datetime
     expires_at = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -142,6 +143,27 @@ async def get_current_user_info(
 @router.post("/seed-demo-users")
 async def seed_demo_users(db: AsyncSession = Depends(get_db)):
     """Seed demo users for testing (development only)"""
+    from uuid import UUID
+    from app.models.models import Tenant, TenantStatus
+    
+    # Create or get default tenant
+    result = await db.execute(
+        select(Tenant).where(Tenant.slug == "demo-clinic")
+    )
+    tenant = result.scalar_one_or_none()
+    
+    if not tenant:
+        tenant = Tenant(
+            name="Demo Dental Clinic",
+            slug="demo-clinic",
+            status=TenantStatus.ACTIVE,
+            storage_bucket="dental-clinic-demo",
+            storage_prefix="demo/",
+            plan="basic"
+        )
+        db.add(tenant)
+        await db.flush()
+    
     demo_users = [
         {
             "email": "patient@demo.com",
@@ -169,10 +191,13 @@ async def seed_demo_users(db: AsyncSession = Depends(get_db)):
     created = []
     for user_data in demo_users:
         result = await db.execute(
-            select(User).where(User.email == user_data["email"])
+            select(User).where(
+                User.email == user_data["email"]
+            )
         )
         if not result.scalar_one_or_none():
             user = User(
+                tenant_id=tenant.id,
                 email=user_data["email"],
                 hashed_password=get_password_hash(user_data["password"]),
                 first_name=user_data["first_name"],
@@ -186,6 +211,7 @@ async def seed_demo_users(db: AsyncSession = Depends(get_db)):
     
     return {
         "message": "Demo users created",
+        "tenant_id": str(tenant.id),
         "users": created,
         "credentials": "Email: [role]@demo.com, Password: password123"
     }

@@ -106,9 +106,20 @@ async def upload_assessment_image(
     current_user: User = Depends(get_current_active_user)
 ):
     """Upload an image for assessment"""
+    from app.services.minio_service import upload_assessment_image
+    from app.models.models import AssessmentImage
+    from app.middleware.tenant_middleware import get_current_tenant
+    
+    tenant = get_current_tenant()
+    
     # Get assessment
     result = await db.execute(
-        select(Assessment).where(Assessment.id == assessment_id)
+        select(Assessment).where(
+            and_(
+                Assessment.id == assessment_id,
+                Assessment.tenant_id == tenant.id
+            )
+        )
     )
     assessment = result.scalar_one_or_none()
     
@@ -124,13 +135,50 @@ async def upload_assessment_image(
             detail="Not authorized to upload to this assessment"
         )
     
-    # TODO: Implement actual file upload to MinIO/S3
-    # For now, return mock response
+    # Read file content
+    file_content = await file.read()
+    
+    # Upload to MinIO
+    upload_result = await upload_assessment_image(
+        file_content,
+        file.filename,
+        str(assessment_id),
+        image_type,
+        str(tenant.id)
+    )
+    
+    if not upload_result.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"File upload failed: {upload_result.get('error', 'Unknown error')}"
+        )
+    
+    # Create image record
     from datetime import datetime
+    image_record = AssessmentImage(
+        tenant_id=tenant.id,
+        assessment_id=assessment_id,
+        file_url=upload_result["file_url"],
+        file_name=file.filename,
+        file_type=image_type,
+        mime_type=file.content_type or "application/octet-stream",
+        file_size=upload_result["file_size"],
+        checksum_sha256=upload_result["checksum"],
+        storage_path=upload_result["storage_path"],
+        validated=True,
+        uploaded_at=datetime.utcnow()
+    )
+    
+    db.add(image_record)
+    
+    # Update assessment status
+    assessment.status = AssessmentStatus.UPLOADED
+    await db.commit()
+    await db.refresh(assessment)
     
     return ImageUploadResponse(
         id=assessment_id,
-        file_url=f"https://storage.dentalclinic.com/{assessment_id}/{file.filename}",
+        file_url=upload_result["file_url"],
         file_name=file.filename,
         file_type=image_type,
         uploaded_at=datetime.utcnow()
