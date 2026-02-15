@@ -6,13 +6,7 @@ import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/dashboard/presentation/screens/main_layout.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
-import '../features/reservation/presentation/screens/reservation_screen.dart';
-import '../features/reception/presentation/screens/reception_screen.dart';
-import '../features/consultation/presentation/screens/consultation_screen.dart';
-import '../features/accounting/presentation/screens/accounting_screen.dart';
-import '../features/patients/presentation/screens/patients_screen.dart';
-import '../features/waiting/presentation/screens/waiting_screen.dart';
-import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/dashboard/presentation/screens/menu_screens.dart';
 
 void configureApp() {
   setUrlStrategy(PathUrlStrategy());
